@@ -21,7 +21,7 @@ public class TestSort {
 	private List<Entry<Map<Integer,Bundle>,Double>> pool;
 	private ArrayList<Patient> patients;
 	private ArrayList<Nurse> nurses;
-	private Map<Integer,Vector<Patient>> schedule;
+	private Map<Integer,Bundle> schedule;
 	private Vector<Patient> scheduledPatients;
 	private double totalSaving;
 	
@@ -30,7 +30,7 @@ public class TestSort {
 		pool = new LinkedList<Entry<Map<Integer,Bundle>,Double>>();
 		patients = new ArrayList<Patient>();
 		nurses = new ArrayList<Nurse>();
-		schedule = new HashMap<Integer,Vector<Patient>>();
+		schedule = new HashMap<Integer,Bundle>();
 		scheduledPatients = new Vector<Patient>();
 		totalSaving = 0.0;
 		
@@ -174,20 +174,22 @@ public class TestSort {
        return sortedPool;
 	}
 	
-	public Map<Integer,Vector<Patient>> makeSchedule(Map<Map<Integer,Bundle>,Double> sortedPool){
+	public Map<Integer,Bundle> makeSchedule(Map<Map<Integer,Bundle>,Double> sortedPool){
 		
-		   int count = 0;
-		   while(!nurses.isEmpty() && nurses.size() != 1){
+		   int count = 0; // counts the number of assigned nurses
+		   
+		   while(!nurses.isEmpty() && sortedPool.size() != 0){
 			   
-			   int size = nurses.size();
-			   System.out.println(""+size);
-			   System.out.println(sortedPool);
 			   
+			   @SuppressWarnings("unchecked")
 			   Map<Integer,Bundle> m = (Map<Integer,Bundle>) sortedPool.keySet().toArray()[0];
-			    int id = (int) m.keySet().toArray()[0];
+			   int id = (int) m.keySet().toArray()[0];
+			   
+			   System.out.println("N"+id+" is being scheduled, pool size: " + sortedPool.size());
+			   System.out.println("Pool: "+sortedPool);
 			    
 			    Bundle b = (Bundle) m.get(id);
-			    schedule.put(id, b.getPatients());
+			    schedule.put(id, b);
 			    
 			    Iterator<Entry<Map<Integer,Bundle>,Double>> it = sortedPool.entrySet().iterator();
 			    
@@ -244,7 +246,7 @@ public class TestSort {
 					   Vector<Patient> vec = new Vector<Patient>();
 					   vec.add(p);
 					   
-					   schedule.put(++backupNurseID, vec);
+					   schedule.put(++backupNurseID, new Bundle(p.PRICE, vec));
 				   }
 			   }
 		   }  
@@ -270,9 +272,25 @@ public class TestSort {
 		
 		TestSort test = new TestSort();
 		test.createPool();
-		Map<Integer,Vector<Patient>> scdl = test.makeSchedule(test.sortPool());
-		System.out.println(scdl);
-		System.out.println(test.getTotatCost());
+		Map<Integer,Bundle> scdl = test.makeSchedule(test.sortPool());
+		
+		System.out.println();
+		
+		for(Entry<Integer,Bundle> entry : scdl.entrySet()){
+			
+			System.out.print("N"+entry.getKey()+": ");
+			
+			for(Patient p : entry.getValue().getPatients()){
+				
+				System.out.print(p.getID()+" ");
+			}
+			System.out.println();
+			
+		}
+		
+		System.out.println();
+		
+		System.out.println("Total Cost: "+test.getTotatCost()+"0$");
 
 	}
 
