@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
 
-import entities.Bundle;
-import entities.Patient;
-import entities.Nurse;
+
+import entities.*;
+
 
 public class TestSort {
 	
@@ -25,6 +25,11 @@ public class TestSort {
 	private Vector<Patient> scheduledPatients;
 	private double totalSaving;
 	
+	
+	/**
+	 * Default Constructor
+	 * Initialize the servers.
+	 */
 	public TestSort(){
 		
 		pool = new LinkedList<Entry<Map<Integer,Bundle>,Double>>();
@@ -135,6 +140,10 @@ public class TestSort {
 		}
 	}
 	
+	
+	/**
+	 * Creates a pool consisting of all the bundles from every nurses.
+	 */
     public void createPool(){
 		
 		Map<Map<Integer,Bundle>,Double> m = new HashMap<Map<Integer,Bundle>,Double>();
@@ -153,6 +162,11 @@ public class TestSort {
 		pool = new LinkedList<Entry<Map<Integer,Bundle>,Double>>(m.entrySet());
 	}
 	
+    
+    /**
+	 * @return Map<Map<Integer,Bundle>,Double> sortedPool
+	 * Sort the created pool from the bundle saving the most to the one saving the leat money.
+	 */
 	public Map<Map<Integer,Bundle>,Double> sortPool(){
 		
 		 // Sorting the list based on values
@@ -174,12 +188,69 @@ public class TestSort {
        return sortedPool;
 	}
 	
+	
+	/**
+	 * @param sortedPool
+	 * @param b: selected Bundle
+	 * @param id: selected nurse id
+	 * Removes other bundles from the selected nurse as well as other overlapping bundles from other nurses.
+	 */
+	public void removeOverlaps(Map<Map<Integer,Bundle>,Double> sortedPool, Bundle b, int id){
+		
+		Iterator<Entry<Map<Integer,Bundle>,Double>> it = sortedPool.entrySet().iterator();
+	    
+	    while(it.hasNext()){
+	    	
+	    	Map<Integer,Bundle> m1 = it.next().getKey();
+	    	
+	    	
+	    	int compID = (int) m1.keySet().toArray()[0];
+	    	Bundle bd = m1.get(compID);
+	    	
+	    	if(id == compID){
+	    
+	    		it.remove();
+	    	}
+	    	else if(b.overlap(bd)){
+	    		
+	    		it.remove();
+	    	}
+	    	
+	    }
+	}
+	
+	
+	/**
+	 * Assigns backup nurses to unscheduled patients.
+	 */
+	public void scheduleBackupNurses(){
+		
+		int backupNurseID = 44444;
+		   
+		   for(Patient p : patients){
+			   
+			   if(!scheduledPatients.contains(p)){
+				   
+				   Vector<Patient> vec = new Vector<Patient>();
+				   vec.add(p);
+				   
+				   schedule.put(++backupNurseID, new Bundle(p.PRICE, vec));
+			   }
+		   }
+		
+	}
+	
+	
+	/**
+	 * @param sortedPool
+	 * Generates a schedule for available nurses and possibly backup nurses
+	 * Selecting the bundles that save the most money.
+	 */
 	public Map<Integer,Bundle> makeSchedule(Map<Map<Integer,Bundle>,Double> sortedPool){
 		
 		   int count = 0; // counts the number of assigned nurses
 		   
 		   while(!nurses.isEmpty() && sortedPool.size() != 0){
-			   
 			   
 			   @SuppressWarnings("unchecked")
 			   Map<Integer,Bundle> m = (Map<Integer,Bundle>) sortedPool.keySet().toArray()[0];
@@ -191,38 +262,7 @@ public class TestSort {
 			    Bundle b = (Bundle) m.get(id);
 			    schedule.put(id, b);
 			    
-			    Iterator<Entry<Map<Integer,Bundle>,Double>> it = sortedPool.entrySet().iterator();
-			    
-			    while(it.hasNext()){
-			    	
-			    	Map<Integer,Bundle> m1 = it.next().getKey();
-			    	
-			    	
-			    	int compID = (int) m1.keySet().toArray()[0];
-			    	Bundle bd = m1.get(compID);
-			    	
-			    	if(id == compID){
-			    
-			    		it.remove();
-			    	}
-			    	else if(b.overlap(bd)){
-			    		
-			    		it.remove();
-			    	}
-			    	
-			    }
-			    
-//			    for(Entry<Map<Integer,Bundle>,Double> entry: copysortedPool.entrySet()){
-//			    	System.out.println(sortedPool);
-//			    	int compID = (int) entry.getKey().keySet().toArray()[0];
-//			    	Bundle bd = entry.getKey().get(id);
-//			    	
-//			    	if(id == compID){
-//			    		System.out.println("Here!!!!"+compID);
-//			    		sortedPool.remove(entry.getKey());
-//			    	}
-//			    	else if(b.overlap(bd)) sortedPool.remove(entry.getKey());
-//			    }
+			    removeOverlaps(sortedPool,b,id);
 			    
 			    totalSaving += b.getSaving();
 			    
@@ -237,23 +277,16 @@ public class TestSort {
 		   
 		   if(!sortedPool.isEmpty()){
 			   
-			   int backupNurseID = 44444;
-			   
-			   for(Patient p : patients){
-				   
-				   if(!scheduledPatients.contains(p)){
-					   
-					   Vector<Patient> vec = new Vector<Patient>();
-					   vec.add(p);
-					   
-					   schedule.put(++backupNurseID, new Bundle(p.PRICE, vec));
-				   }
-			   }
+			   scheduleBackupNurses();
 		   }  
 			
 			return schedule;
 		}
 	
+	
+	/**
+	 * Computes the total cost of the schedule.
+	 */
     public double getTotatCost(){
 		
 		int NormalCost = 0;
@@ -263,10 +296,13 @@ public class TestSort {
 			NormalCost += p.PRICE;
 		}
 		
-		
 		return NormalCost - totalSaving;
 	}
 
+    
+    /**
+	 * Executes the Program.
+	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
